@@ -21,12 +21,43 @@
     <div id="map"></div>
 
     <script>
-        // Initialize the OpenLayers map
         var map = new ol.Map({
-            target: 'map',  // ID of the div where the map will be displayed
+            target: 'map',
             layers: [
                 new ol.layer.Tile({
-                    source: new ol.source.OSM()  // OpenStreetMap base layer
+                    source: new ol.source.OSM()
+                }),
+                new ol.layer.Vector({
+                    source: new ol.source.Vector({
+                        url: 'https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson',
+                        format: new ol.format.GeoJSON()
+                    }),
+                    style: function(feature) {
+                        var category = feature.get('c1'); // Assuming the property is "c1"
+                        
+                        // If the "c1" is 'event', use a triangle
+                        if (category === 'event') {
+                            return new ol.style.Style({
+                                image: new ol.style.Icon({
+                                    // Set triangle shape
+                                    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Font_Awesome_5_solid_triangle-down.svg/768px-Font_Awesome_5_solid_triangle-down.svg.png', // Triangle icon URL
+                                    scale: 0.25, // Reduce size of the triangle
+                                    rotation: Math.PI, // Rotate 180 degrees to face downwards
+                                    fill: new ol.style.Fill({ color: 'pink' }), // Pink fill for the triangle
+                                    anchor: [0.5, 1] // Ensure the point of the triangle is at the bottom
+                                })
+                            });
+                        } else {
+                            // For non-'event' categories, use a blue circle
+                            return new ol.style.Style({
+                                image: new ol.style.Circle({
+                                    radius: 5,  // Half the size of the original (default is 10)
+                                    fill: new ol.style.Fill({ color: 'blue' }),  // Blue color for circles
+                                    stroke: new ol.style.Stroke({ color: 'black', width: 1 })
+                                })
+                            });
+                        }
+                    }
                 })
             ],
             view: new ol.View({
@@ -34,20 +65,7 @@
                 zoom: 12  // Initial zoom level
             })
         });
-
-        // GeoJSON data source
-        var vectorSource = new ol.source.Vector({
-            url: 'https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson',  // Your GeoJSON file URL
-            format: new ol.format.GeoJSON()
-        });
-
-        // Vector layer for GeoJSON data
-        var vectorLayer = new ol.layer.Vector({
-            source: vectorSource
-        });
-
-        // Add the vector layer to the map
-        map.addLayer(vectorLayer);
     </script>
+    
 </body>
 </html>
