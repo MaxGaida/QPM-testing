@@ -1,29 +1,34 @@
 window.onload = function() {
+    // Define the minimalist base map layer
+    var minimalistLayer = new ol.layer.Tile({
+        source: new ol.source.XYZ({
+            url: 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png' // Minimalistic base map
+        })
+    });
+
+    // Define the vector source (GeoJSON data)
+    var vectorSource = new ol.source.Vector({
+        url: 'testopenlayers.geojson', // Path to your GeoJSON file
+        format: new ol.format.GeoJSON()
+    });
+
+    // Create a vector layer with the vector source
+    var vectorLayer = new ol.layer.Vector({
+        source: vectorSource
+    });
+
     // Initialize the map
     var map = new ol.Map({
         target: 'map',
         layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM()
-            })
+            minimalistLayer,  // Add the minimalist map layer
+            vectorLayer       // Add the vector layer
         ],
         view: new ol.View({
             center: ol.proj.fromLonLat([-75.1652, 39.9526]), // Centered on Philadelphia
             zoom: 12
         })
     });
-
-    // Load GeoJSON data
-    var vectorSource = new ol.source.Vector({
-        url: 'testopenlayers.geojson',
-        format: new ol.format.GeoJSON()
-    });
-
-    var vectorLayer = new ol.layer.Vector({
-        source: vectorSource
-    });
-
-    map.addLayer(vectorLayer);
 
     // Get filter elements
     var decadeFilter = document.getElementById('decadeFilter');
@@ -36,7 +41,7 @@ window.onload = function() {
 
         vectorSource.clear(); // Clear existing data
 
-        fetch('testopenlayers.geojson')
+        fetch('testopenlayers.geojson')  // Reload GeoJSON
             .then(response => response.json())
             .then(data => {
                 var filteredFeatures = data.features.filter(feature => {
