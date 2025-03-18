@@ -1,20 +1,20 @@
-// Create the OpenLayers map
+// Initialize the map
 var map = new ol.Map({
-    target: 'map', 
+    target: 'map',
     layers: [
         new ol.layer.Tile({
-            source: new ol.source.OSM() 
+            source: new ol.source.OSM()
         })
     ],
     view: new ol.View({
-        center: ol.proj.fromLonLat([-75.1652, 39.9526]), // Philadelphia
+        center: ol.proj.fromLonLat([-75.1652, 39.9526]), // Centered on Philadelphia
         zoom: 12
     })
 });
 
-// Load GeoJSON Data
+// Load GeoJSON data
 var vectorSource = new ol.source.Vector({
-    url: 'testopenlayers.geojson',  // Update with correct path
+    url: 'testopenlayers.geojson',
     format: new ol.format.GeoJSON()
 });
 
@@ -25,43 +25,35 @@ var vectorLayer = new ol.layer.Vector({
 map.addLayer(vectorLayer);
 
 // Get filter elements
-var startDecadeSelect = document.getElementById('startDecade');
-var endDecadeSelect = document.getElementById('endDecade');
-var categorySelect = document.getElementById('category');
-var genderSelect = document.getElementById('gender');
-var raceSelect = document.getElementById('race');
+var decadeFilter = document.getElementById('decadeFilter');
+var categoryFilter = document.getElementById('categoryFilter');
 
-// Function to filter features based on selected values
+// Function to filter data based on selected values
 function filterData() {
-    var startDecade = parseInt(startDecadeSelect.value);
-    var endDecade = parseInt(endDecadeSelect.value);
-    var selectedCategory = categorySelect.value;
-    var selectedGender = genderSelect.value;
-    var selectedRace = raceSelect.value;
+    var selectedDecade = decadeFilter.value;
+    var selectedCategory = categoryFilter.value;
 
     vectorSource.clear(); // Clear existing data
 
-    fetch('testopenlayers.geojson')  // Reload GeoJSON
+    fetch('testopenlayers.geojson')
         .then(response => response.json())
         .then(data => {
             var filteredFeatures = data.features.filter(feature => {
-                var startDate = feature.properties["start date"] ? parseInt(feature.properties["start date"]) : null;
-                var endDate = feature.properties["end date"] ? parseInt(feature.properties["end date"]) : null;
+                var startDate = feature.properties["Start Date"] ? parseInt(feature.properties["Start Date"]) : null;
+                var endDate = feature.properties["End Date"] ? parseInt(feature.properties["End Date"]) : null;
+                var category = feature.properties["Category"] || "";
 
-                // Filter based on selected decade range
-                var isWithinDateRange = (startDate && startDate <= endDecade) && (endDate && endDate >= startDecade);
+                // Filter by decade
+                var matchesDecade = selectedDecade === "all" || (
+                    startDate && endDate &&
+                    startDate <= parseInt(selectedDecade) + 9 &&
+                    endDate >= parseInt(selectedDecade)
+                );
 
-                // Filter based on selected category
-                var isCategoryMatch = feature.properties["c1"] === selectedCategory || selectedCategory === "all";
+                // Filter by category
+                var matchesCategory = selectedCategory === "all" || category.toLowerCase() === selectedCategory.toLowerCase();
 
-                // Filter based on selected gender
-                var isGenderMatch = feature.properties["sex/gender"] === selectedGender || selectedGender === "all";
-
-                // Filter based on selected race
-                var isRaceMatch = feature.properties["race"] === selectedRace || selectedRace === "all";
-
-                // Return true if all conditions match
-                return isWithinDateRange && isCategoryMatch && isGenderMatch && isRaceMatch;
+                return matchesDecade && matchesCategory;
             });
 
             // Convert filtered features back to GeoJSON format
@@ -70,23 +62,19 @@ function filterData() {
                 features: filteredFeatures
             };
 
+            // Create a new source with filtered data
             var newSource = new ol.source.Vector({
                 features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
                     featureProjection: 'EPSG:3857' // Ensure correct projection
                 })
             });
 
+            // Update the layer with new data
             vectorLayer.setSource(newSource);
         })
         .catch(error => console.error("Error loading GeoJSON:", error));
 }
 
 // Attach event listeners to filters
-startDecadeSelect.addEventListener('change', filterData);
-endDecadeSelect.addEventListener('change', filterData);
-categorySelect.addEventListener('change', filterData);
-genderSelect.addEventListener('change', filterData);
-raceSelect.addEventListener('change', filterData);
-
-// Initial load
-filterData();
+decadeFilter.addEventListener('change', filterData);
+categoryFilter.addEventListener('change', filterData);
