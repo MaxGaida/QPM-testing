@@ -5,24 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenLayers Map with GeoJSON</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@9.1.1/ol.css" />
-    <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ol@9.1.1/dist/ol.js"></script>
     <style>
         #map { height: 100vh; width: 100%; }
     </style>
 </head>
 <body>
 
-<label for="startDecade">Start Decade:</label>
-<input type="range" id="startDecade" min="1900" max="2020" step="10" value="1960">
-<span id="startDecadeText">1960s</span>
+    <label for="startDecade">Start Decade:</label>
+    <input type="range" id="startDecade" min="1900" max="2020" step="10" value="1960">
+    <span id="startDecadeText">1960s</span>
 
-<label for="endDecade">End Decade:</label>
-<input type="range" id="endDecade" min="1900" max="2020" step="10" value="1990">
-<span id="endDecadeText">1990s</span>
-    
+    <label for="endDecade">End Decade:</label>
+    <input type="range" id="endDecade" min="1900" max="2020" step="10" value="1990">
+    <span id="endDecadeText">1990s</span>
 
     <div id="map"></div>
 
-    <script scr="script.js"></script>
+    <!-- Correct script inclusion -->
+    <script src="script.js"></script>
+
 </body>
 </html>
