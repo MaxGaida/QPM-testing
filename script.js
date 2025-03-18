@@ -14,7 +14,6 @@ var map = new ol.Map({
 
 // Load GeoJSON Data
 var vectorSource = new ol.source.Vector({
-    url: 'testopenlayers.geojson',  // Update with correct path
     format: new ol.format.GeoJSON()
 });
 
@@ -36,39 +35,35 @@ function updateSliderLabels() {
     endText.innerText = endSlider.value + "s";
 }
 
+// Load GeoJSON and store original data
+var originalFeatures = [];
+
+fetch('testopenlayers.geojson')
+    .then(response => response.json())
+    .then(data => {
+        originalFeatures = new ol.format.GeoJSON().readFeatures(data, {
+            featureProjection: 'EPSG:3857' // Ensure correct projection
+        });
+
+        vectorSource.addFeatures(originalFeatures);
+    })
+    .catch(error => console.error("Error loading GeoJSON:", error));
+
 // Function to filter features based on selected decades
 function filterData() {
     var startDecade = parseInt(startSlider.value);
     var endDecade = parseInt(endSlider.value);
 
-    vectorSource.clear(); // Clear existing data
+    var filteredFeatures = originalFeatures.filter(feature => {
+        var startDate = feature.get("start date") ? parseInt(feature.get("start date")) : null;
+        var endDate = feature.get("end date") ? parseInt(feature.get("end date")) : null;
 
-    fetch('testopenlayers.geojson')  // Reload GeoJSON
-        .then(response => response.json())
-        .then(data => {
-            var filteredFeatures = data.features.filter(feature => {
-                var startDate = feature.properties["start date"] ? parseInt(feature.properties["start date"]) : null;
-                var endDate = feature.properties["end date"] ? parseInt(feature.properties["end date"]) : null;
+        // Check if the feature's date range falls within the selected decades
+        return (startDate && startDate <= endDecade) && (!endDate || endDate >= startDecade);
+    });
 
-                // Check if the feature's date range falls within the selected decades
-                return (startDate && startDate <= endDecade) && (endDate && endDate >= startDecade);
-            });
-
-            // Convert filtered features back to GeoJSON format
-            var geojsonObject = {
-                type: "FeatureCollection",
-                features: filteredFeatures
-            };
-
-            var newSource = new ol.source.Vector({
-                features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
-                    featureProjection: 'EPSG:3857' // Ensure correct projection
-                })
-            });
-
-            vectorLayer.setSource(newSource);
-        })
-        .catch(error => console.error("Error loading GeoJSON:", error));
+    vectorSource.clear();
+    vectorSource.addFeatures(filteredFeatures);
 }
 
 // Attach event listeners to sliders
