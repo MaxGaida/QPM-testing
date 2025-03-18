@@ -1,14 +1,9 @@
-// Function to extract the decade from a year
-function getDecade(year) {
-    return Math.floor(year / 10) * 10;
-}
-
-// Create OpenLayers map
+// Create the OpenLayers map
 var map = new ol.Map({
-    target: 'map',
+    target: 'map', 
     layers: [
         new ol.layer.Tile({
-            source: new ol.source.OSM()
+            source: new ol.source.OSM() 
         })
     ],
     view: new ol.View({
@@ -17,60 +12,75 @@ var map = new ol.Map({
     })
 });
 
-// Load GeoJSON data
+// Load GeoJSON Data
 var vectorSource = new ol.source.Vector({
-    url: 'testopenlayers.geojson', 
-    format: new ol.format.GeoJSON(),
-    loader: function () {
-        fetch('testopenlayers.geojson')
-            .then(response => response.json())
-            .then(data => {
-                var features = new ol.format.GeoJSON().readFeatures(data);
-                vectorSource.clear();
-                vectorSource.addFeatures(features);
-                updateFilter(); // Apply filtering when data loads
-            });
-    }
+    url: 'testopenlayers.geojson',  // Update with correct path
+    format: new ol.format.GeoJSON()
 });
 
 var vectorLayer = new ol.layer.Vector({
-    source: vectorSource,
-    style: function (feature) {
-        return new ol.style.Style({
-            image: new ol.style.Circle({
-                radius: 6,
-                fill: new ol.style.Fill({ color: 'blue' }),
-                stroke: new ol.style.Stroke({ color: 'white', width: 2 })
-            })
-        });
-    }
+    source: vectorSource
 });
 
 map.addLayer(vectorLayer);
 
-// Filter function
-function updateFilter() {
-    var startDecade = parseInt(document.getElementById('startDecade').value);
-    var endDecade = parseInt(document.getElementById('endDecade').value);
+// Get slider elements
+var startSlider = document.getElementById('startDecade');
+var endSlider = document.getElementById('endDecade');
+var startText = document.getElementById('startDecadeText');
+var endText = document.getElementById('endDecadeText');
 
-    document.getElementById('startDecadeText').innerText = startDecade + 's';
-    document.getElementById('endDecadeText').innerText = endDecade + 's';
-
-    vectorSource.forEachFeature(function (feature) {
-        var startYear = feature.get('start date') || 1900;
-        var endYear = feature.get('end date') || 2020;
-        var featureStartDecade = getDecade(startYear);
-        var featureEndDecade = getDecade(endYear);
-
-        var visible = featureStartDecade <= endDecade && featureEndDecade >= startDecade;
-        feature.setStyle(visible ? null : new ol.style.Style({}));
-    });
+// Function to update text labels
+function updateSliderLabels() {
+    startText.innerText = startSlider.value + "s";
+    endText.innerText = endSlider.value + "s";
 }
 
-// Add event listeners for both sliders
-document.getElementById('startDecade').addEventListener('input', updateFilter);
-document.getElementById('endDecade').addEventListener('input', updateFilter);
+// Function to filter features based on selected decades
+function filterData() {
+    var startDecade = parseInt(startSlider.value);
+    var endDecade = parseInt(endSlider.value);
 
+    vectorSource.clear(); // Clear existing data
 
-// Event listener for slider change
-document.getElementById('decadeRange').addEventListener('input', updateFilter);
+    fetch('testopenlayers.geojson')  // Reload GeoJSON
+        .then(response => response.json())
+        .then(data => {
+            var filteredFeatures = data.features.filter(feature => {
+                var startDate = feature.properties["start date"] ? parseInt(feature.properties["start date"]) : null;
+                var endDate = feature.properties["end date"] ? parseInt(feature.properties["end date"]) : null;
+
+                // Check if the feature's date range falls within the selected decades
+                return (startDate && startDate <= endDecade) && (endDate && endDate >= startDecade);
+            });
+
+            // Convert filtered features back to GeoJSON format
+            var geojsonObject = {
+                type: "FeatureCollection",
+                features: filteredFeatures
+            };
+
+            var newSource = new ol.source.Vector({
+                features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
+                    featureProjection: 'EPSG:3857' // Ensure correct projection
+                })
+            });
+
+            vectorLayer.setSource(newSource);
+        })
+        .catch(error => console.error("Error loading GeoJSON:", error));
+}
+
+// Attach event listeners to sliders
+startSlider.addEventListener('input', () => {
+    updateSliderLabels();
+    filterData();
+});
+
+endSlider.addEventListener('input', () => {
+    updateSliderLabels();
+    filterData();
+});
+
+// Initialize text values on page load
+updateSliderLabels();
