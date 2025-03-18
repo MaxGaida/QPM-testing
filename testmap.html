@@ -29,37 +29,26 @@
         });
 
         // Add GeoJSON data
+        var vectorSource = new ol.source.Vector({
+            url: 'testopenlayers.geojson',  // Replace with the correct path to your GeoJSON file
+            format: new ol.format.GeoJSON()
+        });
+
+        // Check if features are loaded
+        vectorSource.on('change', function() {
+            if (vectorSource.getState() === 'ready') {
+                console.log('GeoJSON data loaded successfully');
+            } else {
+                console.log('GeoJSON data not loaded');
+            }
+        });
+
         var vectorLayer = new ol.layer.Vector({
-            source: new ol.source.Vector({
-                url: 'testopenlayers.geojson',  // Replace with the correct path to your GeoJSON file
-                format: new ol.format.GeoJSON()
-            })
+            source: vectorSource
         });
 
         // Add the GeoJSON layer to the map
         map.addLayer(vectorLayer);
-
-var vectorSource = new ol.source.Vector({
-    url: 'your-data.geojson',
-    format: new ol.format.GeoJSON()
-});
-
-// Check if features are loaded
-vectorSource.on('change', function() {
-    if (vectorSource.getState() === 'ready') {
-        console.log('GeoJSON data loaded successfully');
-    } else {
-        console.log('GeoJSON data not loaded');
-    }
-});
-
-var vectorLayer = new ol.layer.Vector({
-    source: vectorSource
-});
-
-map.addLayer(vectorLayer);
-
-
     </script>
 </body>
 </html>
