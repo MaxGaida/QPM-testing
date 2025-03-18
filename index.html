@@ -23,42 +23,6 @@
 
     <div id="map"></div>
 
-    <script>
-        // Create the OpenLayers map
-        var map = new ol.Map({
-            target: 'map',  // The ID of the div where the map will be displayed
-            layers: [
-                new ol.layer.Tile({
-                    source: new ol.source.OSM()  // OpenStreetMap layer
-                })
-            ],
-            view: new ol.View({
-                center: ol.proj.fromLonLat([-75.1652, 39.9526]),  // Center the map on Philadelphia
-                zoom: 12
-            })
-        });
-
-        // Add GeoJSON data
-        var vectorSource = new ol.source.Vector({
-            url: 'testopenlayers.geojson',  // Replace with the correct path to your GeoJSON file
-            format: new ol.format.GeoJSON()
-        });
-
-        // Check if features are loaded
-        vectorSource.on('change', function() {
-            if (vectorSource.getState() === 'ready') {
-                console.log('GeoJSON data loaded successfully');
-            } else {
-                console.log('GeoJSON data not loaded');
-            }
-        });
-
-        var vectorLayer = new ol.layer.Vector({
-            source: vectorSource
-        });
-
-        // Add the GeoJSON layer to the map
-        map.addLayer(vectorLayer);
-    </script>
+    <script scr="script.js"></script>
 </body>
 </html>
