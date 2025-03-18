@@ -39,9 +39,10 @@ function filterData() {
         .then(response => response.json())
         .then(data => {
             var filteredFeatures = data.features.filter(feature => {
-                var startDate = feature.properties["Start Date"] ? parseInt(feature.properties["Start Date"]) : null;
-                var endDate = feature.properties["End Date"] ? parseInt(feature.properties["End Date"]) : null;
-                var category = feature.properties["Category"] || "";
+                var startDate = feature.properties["start date"] ? parseInt(feature.properties["start date"]) : null;
+                var endDate = feature.properties["end date"] ? parseInt(feature.properties["end date"]) : null;
+                var category = feature.properties["c1"] || ""; // "c1" is your categorization field
+
 
                 // Filter by decade
                 var matchesDecade = selectedDecade === "all" || (
