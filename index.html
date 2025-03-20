@@ -1,263 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenLayers Map with GeoJSON</title>
-    <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
-    <style>
-        #map { height: 100vh; width: 100%; }
-        #filters { position: absolute; top: 10px; left: 10px; background-color: white; padding: 10px; overflow-y: auto; max-height: 80vh; }
-        button { margin-top: 10px; }
-        .popup { background: white; padding: 10px; border: 1px solid #ccc; max-width: 300px; }
-        .popup h4 { margin-top: 0; }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-    <div id="filters">
-        <h3>Filter by Category (c1)</h3>
-        <label><input type="checkbox" class="c1" id="event" checked> Event</label><br>
-        <label><input type="checkbox" class="c1" id="business" checked> Business</label><br>
-        <label><input type="checkbox" class="c1" id="organization" checked> Organization</label><br>
-
-        <h3>Filter by Subcategory (c2)</h3>
-        <button id="deselectAllBtn">Deselect All</button><br>
-        <button id="selectAllBtn">Select All</button><br>
-        <div id="subcategories"></div>
-    </div>
-
-    <script>
-        var map = new ol.Map({
-            target: 'map',
-            layers: [
-                new ol.layer.Tile({
-                    source: new ol.source.OSM()  // OpenStreetMap as base layer
-                }),
-                new ol.layer.Vector({
-                    source: new ol.source.Vector({
-                        url: 'https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson',
-                        format: new ol.format.GeoJSON()
-                    }),
-                    style: function (feature) {
-                        var c1 = feature.get('c1');
-                        var color = 'gray';  // Default color
-
-                        // Style based on 'c1' category
-                        if (c1 === 'event') {
-                            color = 'red';
-                        } else if (c1 === 'business') {
-                            color = 'green';
-                        } else if (c1 === 'organization') {
-                            color = 'blue';
-                        }
-
-                        return new ol.style.Style({
-                            image: new ol.style.Circle({
-                                radius: 7,
-                                fill: new ol.style.Fill({ color: color }),
-                                stroke: new ol.style.Stroke({ color: 'black', width: 1 })
-                            })
-                        });
-                    }
-                })
-            ],
-            view: new ol.View({
-                center: ol.proj.fromLonLat([-75.1652, 39.9526]),
-                zoom: 12
-            })
-        });
-
-        var subcategories = {};
-
-        // Extract subcategories from GeoJSON data
-        function extractSubcategories(data) {
-            data.features.forEach(function(feature) {
-                var c1 = feature.properties['c1'];
-                var c2 = feature.properties['c2'];
-
-                if (!subcategories[c1]) {
-                    subcategories[c1] = new Set();
-                }
-                subcategories[c1].add(c2);
-            });
-
-            updateSubcategoryFilters();
-        }
-
-        // Fetch GeoJSON data and extract subcategories
-        fetch('https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson')
-            .then(response => response.json())
-            .then(data => {
-                extractSubcategories(data);
-                filterData();
-            });
-
-        // Update the subcategory filters based on selected c1 categories
-        function updateSubcategoryFilters() {
-            var selectedC1 = [];
-            if (document.getElementById('event').checked) selectedC1.push('event');
-            if (document.getElementById('business').checked) selectedC1.push('business');
-            if (document.getElementById('organization').checked) selectedC1.push('organization');
-
-            var subcategoryContainer = document.getElementById('subcategories');
-            subcategoryContainer.innerHTML = '';
-
-            selectedC1.forEach(function(c1) {
-                var subCategoryList = subcategories[c1];
-                if (subCategoryList) {
-                    subCategoryList.forEach(function(subcategory) {
-                        var label = document.createElement('label');
-                        var checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.id = c1 + '-' + subcategory;
-                        checkbox.checked = true;
-                        label.appendChild(checkbox);
-                        label.appendChild(document.createTextNode(subcategory));
-                        subcategoryContainer.appendChild(label);
-                        subcategoryContainer.appendChild(document.createElement('br'));
-                    });
-                }
-            });
-
-            document.querySelectorAll('#subcategories input[type="checkbox"]').forEach(function(checkbox) {
-                checkbox.addEventListener('change', filterData);
-            });
-        }
-
-        // Filter data based on selected checkboxes
-        function filterData() {
-            var selectedCategories = [];
-            var selectedSubCategories = [];
-
-            if (document.getElementById('event').checked) selectedCategories.push('event');
-            if (document.getElementById('business').checked) selectedCategories.push('business');
-            if (document.getElementById('organization').checked) selectedCategories.push('organization');
-
-            document.querySelectorAll('#subcategories input[type="checkbox"]:checked').forEach(function(checkbox) {
-                var subcategory = checkbox.id.split('-')[1];
-                selectedSubCategories.push(subcategory);
-            });
-
-            var vectorLayer = map.getLayers().item(1); 
-            var vectorSource = vectorLayer.getSource();
-            vectorSource.clear();
-
-            fetch('https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson')
-                .then(response => response.json())
-                .then(data => {
-                    var filteredFeatures = data.features.filter(function(feature) {
-                        var c1 = feature.properties['c1'];
-                        var c2 = feature.properties['c2'];
-
-                        return selectedCategories.includes(c1) && selectedSubCategories.includes(c2);
-                    });
-
-                    var geojsonObject = {
-                        type: "FeatureCollection",
-                        features: filteredFeatures
-                    };
-
-                    var newSource = new ol.source.Vector({
-                        features: new ol.format.GeoJSON().readFeatures(geojsonObject, {
-                            featureProjection: 'EPSG:3857'
-                        })
-                    });
-
-                    vectorLayer.setSource(newSource);
-                });
-        }
-
-        // Function to generate Decades info
-        function getDecades(start, end) {
-            if (!start || !end || isNaN(start) || isNaN(end)) {
-                return 'Unknown';
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>GeoJSON Map</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css">
+        <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
+        <style>
+            body {
+                margin: 0;
+                font-family: Arial, sans-serif;
             }
-
-            var decades = [];
-            for (var year = start; year <= end; year += 10) {
-                var decadeStart = year;
-                var decadeEnd = year + 9;
-                decades.push(decadeStart + '-' + decadeEnd);
+            #map {
+                width: 100%;
+                height: 100vh;
+                position: absolute;
+                top: 0;
+                left: 0;
             }
-            return decades.join(', ');
-        }
-
-        // Hover event handler with a 1-second delay
-        var overlayContainerElement = document.createElement('div');
-        overlayContainerElement.className = 'popup';
-        var overlay = new ol.Overlay({
-            element: overlayContainerElement,
-            autoPan: true,
-            autoPanAnimation: {
-                duration: 250
+            #filters {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 10px;
+                border-radius: 5px;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+                z-index: 1000;
+                max-width: 300px;
+                overflow-y: auto;
             }
-        });
-        map.addOverlay(overlay);
+        </style>
+    </head>
 
-        var hoverTimeout = null; // Timer variable
 
-        map.on('pointermove', function (evt) {
-            var feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
-                return feature;
-            });
-
-            if (feature) {
-                if (hoverTimeout) clearTimeout(hoverTimeout);  // Clear any existing timer
-
-                hoverTimeout = setTimeout(function() {
-                    var name = feature.get('name') || 'No Name';
-                    var address = feature.get('address') || 'No Address';
-                    var description = feature.get('description') || '';
-                    var start = feature.get('start date');
-                    var end = feature.get('end date');
-                    var source = feature.get('source') || 'No Source';
-
-                    // Calculate decades
-                    var decades = getDecades(parseInt(start), parseInt(end));
-
-                    // Display information in popup
-                    overlayContainerElement.innerHTML = `
-                        <h4>${name}</h4>
-                        <p><strong>Address:</strong> ${address}</p>
-                        <p><strong>Description:</strong> ${description}</p>
-                        <p><strong>Decades:</strong> ${decades}</p>
-                        <p><strong>Source:</strong> ${source}</p>
-                    `;
-                    overlay.setPosition(evt.coordinate);
-                }, 1000); // 1 second delay
-            } else {
-                if (hoverTimeout) clearTimeout(hoverTimeout); // Clear the timer when no feature is hovered
-                overlay.setPosition(undefined);  // Hide the popup
-            }
-        });
-
-        // Select/Deselect All functionality
-        document.getElementById('deselectAllBtn').addEventListener('click', function() {
-            document.querySelectorAll('#subcategories input[type="checkbox"]').forEach(function(checkbox) {
-                checkbox.checked = false;
-            });
-            filterData();
-        });
-
-        document.getElementById('selectAllBtn').addEventListener('click', function() {
-            document.querySelectorAll('#subcategories input[type="checkbox"]').forEach(function(checkbox) {
-                checkbox.checked = true;
-            });
-            filterData();
-        });
-
-        // Event listeners for c1 checkboxes
-        document.querySelectorAll('#filters input.c1').forEach(function(checkbox) {
-            checkbox.addEventListener('change', function() {
-                updateSubcategoryFilters();
-                filterData();
-            });
-        });
-
-        // Initialize filter setup
-        updateSubcategoryFilters();
-        filterData();
-    </script>
+    <body>
+        <h2>Historical Map of Philadelphia</h2>
+        <div id="filters"></div> <!-- New filter container -->
+        <div id="map"></div>
+        <script src="script.js"></script>  <!-- Initializes the map and loads GeoJSON -->
+        <script src="description.js"></script> <!-- Handles hover tooltips -->
+        <script src="filter.js"></script> <!-- Handles category-based filtering -->
+        <script src="color.js"></script> <!-- Handles color-based filtering -->
+        <script src="decade.js"></script> <!-- Handles decade-based filtering -->
+    </body>
+    
 </body>
+
 </html>
