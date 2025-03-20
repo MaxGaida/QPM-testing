@@ -1,4 +1,4 @@
-// Function to create decade filter UI in the top-right corner
+// Function to create decade filter UI in the top-right corner with Select All/Deselect All
 function createDecadeFilterUI() {
     const decadesDiv = document.createElement("div");
     decadesDiv.id = "decade-filters";
@@ -17,6 +17,23 @@ function createDecadeFilterUI() {
 
     // Define decades
     const decades = [1900, 1910, 1920, 1930, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020];
+
+    // Create Select All and Deselect All buttons
+    let selectAllBtn = document.createElement("button");
+    selectAllBtn.innerText = "Select All";
+    selectAllBtn.style.margin = "5px";
+    selectAllBtn.style.cursor = "pointer";
+    selectAllBtn.addEventListener("click", () => toggleDecadeCheckboxes(true));
+
+    let deselectAllBtn = document.createElement("button");
+    deselectAllBtn.innerText = "Deselect All";
+    deselectAllBtn.style.margin = "5px";
+    deselectAllBtn.style.cursor = "pointer";
+    deselectAllBtn.addEventListener("click", () => toggleDecadeCheckboxes(false));
+
+    decadesDiv.appendChild(selectAllBtn);
+    decadesDiv.appendChild(deselectAllBtn);
+    decadesDiv.appendChild(document.createElement("br"));
 
     // Create checkboxes for each decade
     decades.forEach(decade => {
@@ -37,6 +54,14 @@ function createDecadeFilterUI() {
     document.body.appendChild(decadesDiv);
 
     addDecadeFilterListeners();
+}
+
+// Function to select or deselect all decade checkboxes
+function toggleDecadeCheckboxes(selectAll) {
+    document.querySelectorAll(".decade-filter").forEach(cb => {
+        cb.checked = selectAll;
+    });
+    filterFeatures(); // Reapply filtering after toggling
 }
 
 // Function to check if a feature falls within selected decades
