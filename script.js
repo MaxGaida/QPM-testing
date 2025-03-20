@@ -1,79 +1,112 @@
-window.onload = function() {
-    // Style function for vector layer
-    var styleFunction = function (feature) {
-        var c1 = feature.get('c1'); // Category (e.g., event, business, etc.)
-        var sexGender = feature.get('sex/gender'); // Sexual orientation/gender classification
-        var race = feature.get('race'); // Race classification
+document.addEventListener("DOMContentLoaded", function () {
+    if (!window.vectorLayer) {
+        console.error("vectorLayer is not defined. Ensure it's initialized before this script runs.");
+        return;
+    }
 
-        // Default color in case none of the conditions are met
-        var color = 'gray';
+    var vectorLayer = window.vectorLayer; // Use the globally defined vector layer
 
-        // Color based on 'c1' (Category)
-        if (c1 === 'event') {
-            color = 'red';  // Events in red
-        } else if (c1 === 'business') {
-            color = 'green';  // Businesses in green
-        } else if (c1 === 'organization') {
-            color = 'blue';  // Organizations in blue
-        }
+    var allFeatures = []; // Store all features globally
 
-        // Override color based on 'sex/gender'
-        if (sexGender === 'gay') {
-            color = 'blue';  // Gay spaces in blue
-        } else if (sexGender === 'lesbian') {
-            color = 'purple';  // Lesbian spaces in purple
-        } else if (sexGender === 'queer') {
-            color = 'pink';  // Queer spaces in pink
-        }
-
-        // Override color based on 'race'
-        if (race === 'white') {
-            color = 'lightgray';  // White spaces in light gray
-        } else if (race === 'Black') {
-            color = 'black';  // Black spaces in black
-        } else if (race === 'Latino') {
-            color = 'orange';  // Latino spaces in orange
-        }
-
-        // Return a style with the color based on the classification
-        return new ol.style.Style({
-            image: new ol.style.Circle({
-                radius: 7,  // Size of the circle
-                fill: new ol.style.Fill({ color: color }),  // Set color based on classification
-                stroke: new ol.style.Stroke({ color: 'black', width: 1 })  // Black border for contrast
-            })
+    function loadInitialData(data) {
+        allFeatures = new ol.format.GeoJSON().readFeatures(data, {
+            featureProjection: 'EPSG:3857'
         });
-    };
 
-    // Define the vector source with GeoJSON data
-    var vectorSource = new ol.source.Vector({
-        url: 'https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson',  // Your GeoJSON file URL
-        format: new ol.format.GeoJSON()
-    });
+        vectorLayer.getSource().clear();
+        vectorLayer.getSource().addFeatures(allFeatures);
+    }
 
-    // Define the vector layer with the style function
-    var vectorLayer = new ol.layer.Vector({
-        source: vectorSource,
-        style: styleFunction  // Apply the style function
-    });
+    function filterData() {
+        var selectedCategories = new Set();
+        document.querySelectorAll('.c1:checked').forEach(cb => selectedCategories.add(cb.id));
 
-    // Define the base layer (Stamen Toner - minimalist)
-    var baseLayer = new ol.layer.Tile({
-        source: new ol.source.XYZ({
-            url: 'https://{a-c}.tile.stamen.com/toner/{z}/{x}/{y}.png'  // URL to Stamen Toner tiles
-        })
-    });
+        var selectedSubCategories = new Set();
+        document.querySelectorAll('#subcategories input[type="checkbox"]:checked').forEach(cb => {
+            let subcategory = cb.id.split('-')[1];
+            selectedSubCategories.add(subcategory);
+        });
 
-    // Initialize the map
-    var map = new ol.Map({
-        target: 'map',  // ID of the div where the map will be displayed
-        layers: [
-            baseLayer,  // Add the base layer
-            vectorLayer  // Add the vector layer with styled data points
-        ],
-        view: new ol.View({
-            center: ol.proj.fromLonLat([-75.1652, 39.9526]),  // Center on Philadelphia
-            zoom: 12  // Initial zoom level
-        })
-    });
-};
+        var filteredFeatures = allFeatures.filter(feature => {
+            var c1 = feature.get('c1');
+            var c2 = feature.get('c2');
+            return selectedCategories.has(c1) && selectedSubCategories.has(c2);
+        });
+
+        vectorLayer.getSource().clear();
+        vectorLayer.getSource().addFeatures(filteredFeatures);
+    }
+
+    function createCategoryFilters(data) {
+        var categoryContainer = document.getElementById('filters');
+        var uniqueCategories = new Set();
+
+        data.features.forEach(feature => uniqueCategories.add(feature.properties['c1']));
+
+        uniqueCategories.forEach(category => {
+            var label = document.createElement('label');
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.classList.add('c1');
+            checkbox.id = category;
+            checkbox.checked = true;
+            checkbox.addEventListener('change', () => {
+                updateSubcategoryFilters();
+                filterData();
+            });
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(category));
+            categoryContainer.appendChild(label);
+            categoryContainer.appendChild(document.createElement('br'));
+        });
+    }
+
+    function updateSubcategoryFilters() {
+        var selectedC1 = new Set();
+        document.querySelectorAll('.c1:checked').forEach(cb => selectedC1.add(cb.id));
+
+        var subcategoryContainer = document.getElementById('subcategories');
+        subcategoryContainer.innerHTML = '';
+
+        var uniqueSubcategories = {};
+
+        allFeatures.forEach(feature => {
+            var c1 = feature.get('c1');
+            var c2 = feature.get('c2');
+
+            if (selectedC1.has(c1)) {
+                if (!uniqueSubcategories[c1]) uniqueSubcategories[c1] = new Set();
+                uniqueSubcategories[c1].add(c2);
+            }
+        });
+
+        Object.keys(uniqueSubcategories).forEach(c1 => {
+            uniqueSubcategories[c1].forEach(subcategory => {
+                var label = document.createElement('label');
+                var checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `${c1}-${subcategory}`;
+                checkbox.checked = true;
+                checkbox.addEventListener('change', filterData);
+
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(subcategory));
+                subcategoryContainer.appendChild(label);
+                subcategoryContainer.appendChild(document.createElement('br'));
+            });
+        });
+    }
+
+    fetch('https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson')
+        .then(response => response.json())
+        .then(data => {
+            createCategoryFilters(data);
+            loadInitialData(data);
+            updateSubcategoryFilters();
+            filterData();
+        });
+
+
+
+});
