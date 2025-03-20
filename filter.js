@@ -30,10 +30,27 @@ function filterFeatures() {
 }
 
 
-// Function to create filter UI with collapsible c2 checkboxes
+// Function to create filter UI with select/deselect all buttons
 function createFilterUI() {
     const filterDiv = document.getElementById("filters");
     filterDiv.innerHTML = "<h3>Filter by Category</h3>";
+
+    // Create Select All and Deselect All buttons
+    let selectAllBtn = document.createElement("button");
+    selectAllBtn.innerText = "Select All";
+    selectAllBtn.style.margin = "5px";
+    selectAllBtn.style.cursor = "pointer";
+    selectAllBtn.addEventListener("click", () => toggleCategoryCheckboxes(true));
+
+    let deselectAllBtn = document.createElement("button");
+    deselectAllBtn.innerText = "Deselect All";
+    deselectAllBtn.style.margin = "5px";
+    deselectAllBtn.style.cursor = "pointer";
+    deselectAllBtn.addEventListener("click", () => toggleCategoryCheckboxes(false));
+
+    filterDiv.appendChild(selectAllBtn);
+    filterDiv.appendChild(deselectAllBtn);
+    filterDiv.appendChild(document.createElement("br"));
 
     Object.keys(categories).forEach(c1 => {
         let c1Container = document.createElement("div");
@@ -112,20 +129,45 @@ function createFilterUI() {
     addFilterListeners(); // Ensure checkboxes still work for filtering
 }
 
-// Function to add event listeners to checkboxes
-function addFilterListeners() {
+// Function to select or deselect all c1 and c2 checkboxes
+function toggleCategoryCheckboxes(selectAll) {
     document.querySelectorAll(".c1-filter, .c2-filter").forEach(cb => {
-        cb.addEventListener("change", () => {
-            console.log("Filter changed:", cb.value); // Debugging
+        cb.checked = selectAll;
+    });
+    filterFeatures(); // Apply filtering immediately
+}
 
-            if (typeof filterFeatures === "function") {
-                filterFeatures();
-            } else {
-                console.error("filterFeatures function is not available.");
-            }
+// Function to add event listeners to c1 and c2 checkboxes
+function addFilterListeners() {
+    document.querySelectorAll(".c1-filter").forEach(c1Checkbox => {
+        c1Checkbox.addEventListener("change", function () {
+            let c1Value = this.value;
+            let c2Checkboxes = document.querySelectorAll(`.c2-filter[data-c1='${c1Value}']`);
+
+            // If c1 is unchecked, uncheck all its c2; if checked, check all its c2
+            c2Checkboxes.forEach(c2Checkbox => {
+                c2Checkbox.checked = this.checked;
+            });
+
+            filterFeatures(); // Apply filter updates
+        });
+    });
+
+    document.querySelectorAll(".c2-filter").forEach(c2Checkbox => {
+        c2Checkbox.addEventListener("change", function () {
+            let c1Value = this.dataset.c1;
+            let c1Checkbox = document.querySelector(`.c1-filter[value='${c1Value}']`);
+            let allC2Checkboxes = document.querySelectorAll(`.c2-filter[data-c1='${c1Value}']`);
+            let anyC2Checked = Array.from(allC2Checkboxes).some(cb => cb.checked);
+
+            // If at least one c2 is checked, ensure c1 remains checked
+            c1Checkbox.checked = anyC2Checked;
+
+            filterFeatures(); // Apply filter updates
         });
     });
 }
+
 
 
 // Wait for GeoJSON to load, then extract categories and create UI
