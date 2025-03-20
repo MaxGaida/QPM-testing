@@ -1,5 +1,5 @@
 // Define a color mapping for c1 categories
-const categoryColors = {
+const c1categoryColors = {
     "Business": "blue",
     "Event": "green",
     "Organization": "purple",
