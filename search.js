@@ -2,7 +2,7 @@ function createSearchUI() {
     let searchDiv = document.createElement("div");
     searchDiv.id = "search-container";
     searchDiv.style.position = "absolute";
-    searchDiv.style.top = "10px";
+    searchDiv.style.top = "130px";
     searchDiv.style.left = "10px";
     searchDiv.style.background = "rgba(255, 255, 255, 0.9)";
     searchDiv.style.padding = "10px";
