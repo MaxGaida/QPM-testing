@@ -32,8 +32,23 @@ function filterFeatures() {
 
 // Function to create filter UI with select/deselect all buttons
 function createFilterUI() {
-    const filterDiv = document.getElementById("filters");
+    let filterDiv = document.getElementById("filters");
+    if (!filterDiv) {
+        filterDiv = document.createElement("div");
+        filterDiv.id = "filters";
+        document.body.appendChild(filterDiv);
+    }
     filterDiv.innerHTML = "<h3>Filter by Category</h3>";
+
+    filterDiv.style.position = "absolute";
+    filterDiv.style.top = "130px"; // Moves below the search bar
+    filterDiv.style.left = "10px";
+    filterDiv.style.background = "rgba(255, 255, 255, 0.9)";
+    filterDiv.style.padding = "10px";
+    filterDiv.style.borderRadius = "5px";
+    filterDiv.style.boxShadow = "2px 2px 5px rgba(0,0,0,0.3)";
+    filterDiv.style.zIndex = "999";
+    filterDiv.style.maxWidth = "300px";
 
     // Create Select All and Deselect All buttons
     let selectAllBtn = document.createElement("button");
@@ -86,7 +101,6 @@ function createFilterUI() {
         let c2List = document.createElement("div");
         c2List.style.marginLeft = "15px";
         c2List.style.display = "none"; // Hide by default
-
 
         // Toggle functionality
         toggleBtn.addEventListener("click", function() {
@@ -167,8 +181,6 @@ function addFilterListeners() {
         });
     });
 }
-
-
 
 // Wait for GeoJSON to load, then extract categories and create UI
 setTimeout(() => {
