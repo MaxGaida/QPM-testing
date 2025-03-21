@@ -41,7 +41,7 @@ function createFilterUI() {
     filterDiv.innerHTML = "<h3>Filter by Category</h3>";
 
     filterDiv.style.position = "absolute";
-    filterDiv.style.top = "130px"; // Moves below the search bar
+    filterDiv.style.top = "150px"; // Moves below the search bar
     filterDiv.style.left = "10px";
     filterDiv.style.background = "rgba(255, 255, 255, 0.9)";
     filterDiv.style.padding = "10px";
