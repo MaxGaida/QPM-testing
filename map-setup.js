@@ -1,26 +1,70 @@
-// Ensure vectorLayer is declared globally and initialized
-var vectorLayer = new ol.layer.Vector({
-    source: new ol.source.Vector()
-});
-
-// Create the base layer (e.g., OpenStreetMap)
-var baseLayer = new ol.layer.Tile({
-    source: new ol.source.OSM()
-});
-
-var map = new ol.Map({
-    target: 'map',
-    layers: [
-        baseLayer,  // Base layer (e.g., OpenStreetMap or any other tile source)
-        vectorLayer // Your vector layer containing features
-    ],
-    view: new ol.View({
-        center: ol.proj.fromLonLat([-75.1652, 39.9526]),  // Center of the map (Philadelphia)
-        zoom: 12
+// Default style fallback (used if needed)
+const defaultStyle = new ol.style.Style({
+    image: new ol.style.Circle({
+        radius: 6,
+        fill: new ol.style.Fill({ color: 'blue' }),
+        stroke: new ol.style.Stroke({ color: 'white', width: 1 })
     })
 });
 
-// Load the GeoJSON data and add it to the vectorLayer
+// Color cache for consistent mapping
+const c1ColorMap = {};
+const colorPalette = [
+    '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+    '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+    '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
+    '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+];
+
+window.c1ColorMap = {};
+
+// Dynamic style function
+function styleFunction(feature) {
+    const c1 = feature.get("c1") || "Other";
+
+    if (!c1ColorMap[c1]) {
+        const nextColor = colorPalette[Object.keys(c1ColorMap).length % colorPalette.length];
+        c1ColorMap[c1] = nextColor;
+    }
+
+    return new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 6,
+            fill: new ol.style.Fill({ color: c1ColorMap[c1] }),
+            stroke: new ol.style.Stroke({ color: "white", width: 1 })
+        })
+    });
+}
+window.styleFunction = styleFunction;
+
+
+// Base map
+const baseLayer = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+        url: 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        attributions: '© OpenStreetMap contributors © CARTO'
+    })
+});
+
+// Vector layer
+const vectorSource = new ol.source.Vector();
+const vectorLayer = new ol.layer.Vector({ source: vectorSource });
+
+window.vectorSource = vectorSource;
+window.vectorLayer = vectorLayer;
+
+// Map
+const map = new ol.Map({
+    target: 'map',
+    layers: [baseLayer, vectorLayer],
+    view: new ol.View({
+        center: ol.proj.fromLonLat([-75.1652, 39.9526]),
+        zoom: 12
+    })
+});
+window.map = map;
+
+// Load data
 fetch('https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/testopenlayers.geojson')
     .then(response => {
         if (!response.ok) throw new Error("Failed to load GeoJSON");
@@ -28,17 +72,30 @@ fetch('https://raw.githubusercontent.com/MaxGaida/QPM-testing/refs/heads/main/te
     })
     .then(data => {
         console.log("Loaded GeoJSON Data:", data);
-        loadInitialData(data);  // Adds the initial data to the vector layer
+        loadInitialData(data);
     })
     .catch(error => console.error("Error fetching GeoJSON:", error));
 
+// Load and style data
 function loadInitialData(data) {
-    var features = new ol.format.GeoJSON().readFeatures(data, {
+    const features = new ol.format.GeoJSON().readFeatures(data, {
         featureProjection: 'EPSG:3857'
     });
 
-    console.log("Parsed Features:", features); // Check if features are correctly read
+    spreadOverlappingFeatures(features); // If you use this
+    vectorSource.clear();
+    vectorSource.addFeatures(features);
 
-    vectorLayer.getSource().clear();  // Clear the vector layer before adding new data
-    vectorLayer.getSource().addFeatures(features);  // Add the loaded features to the vector layer
+    features.forEach(f => f.setStyle(styleFunction(f)));
+
+    window.fuse = new Fuse(features.map(f => ({
+        feature: f,
+        ...f.getProperties()
+    })), {
+        keys: ['Name', 'Address', 'Description', 'Source', 'sex/gender', 'race'],
+        includeScore: true,
+        threshold: 0.3
+    });
+
+    console.log("✅ Fuse index created with", features.length, "features");
 }

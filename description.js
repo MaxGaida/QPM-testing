@@ -1,69 +1,95 @@
+// Avoid duplicate creation of popupDiv
+let popupDiv = document.getElementById('popup');
+
+if (!popupDiv) {
+    popupDiv = document.createElement('div');
+    popupDiv.setAttribute('id', 'popup');
+    popupDiv.style.position = 'absolute';
+    popupDiv.style.backgroundColor = 'white';
+    popupDiv.style.border = '1px solid black';
+    popupDiv.style.padding = '10px';
+    popupDiv.style.display = 'none';
+    popupDiv.style.zIndex = '1000';
+    popupDiv.style.maxWidth = '300px';
+    popupDiv.style.wordWrap = 'break-word';
+    document.body.appendChild(popupDiv);
+}
+
 // Function to calculate decades from the start and end years
 function calculateDecades(startYear, endYear) {
-    let decades = [];
-    for (let year = startYear; year <= endYear; year += 10) {
-        let decadeStart = Math.floor(year / 10) * 10;
-        let decadeEnd = decadeStart + 9;
-        decades.push(`${decadeStart}s`);
-    }
-    return decades.join(", ");
-}
+    if (!startYear || !endYear) return 'Unknown';
 
-// Create a popup div
-const popupDiv = document.createElement('div');
-popupDiv.setAttribute('id', 'popup');
-popupDiv.style.position = 'absolute';
-popupDiv.style.backgroundColor = 'white';
-popupDiv.style.border = '1px solid black';
-popupDiv.style.padding = '10px';
-popupDiv.style.display = 'none';
-popupDiv.style.zIndex = '1000';
-popupDiv.style.maxWidth = '300px'; // Set a fixed width (you can adjust this)
-popupDiv.style.wordWrap = 'break-word'; // Ensures content wraps
-document.body.appendChild(popupDiv);
+    const startDecade = Math.floor(startYear / 10) * 10;
+    const endDecade = Math.floor(endYear / 10) * 10;
 
-// Function to get data or return an empty string if data is null or undefined
-function getDataOrBlank(data) {
-    return data ? data : ''; // Return data if it exists, else return an empty string
-}
-
-// Handle hovering over features
-let hoverTimeout;
-window.map.on('pointermove', function (event) {
-    const feature = map.forEachFeatureAtPixel(event.pixel, function (feat) {
-        return feat;
-    });
-
-    if (feature) {
-        const properties = feature.getProperties();
-
-        const startYear = properties['start date'] ? parseInt(properties['start date'].split('-')[0]) : null;
-        const endYear = properties['end date'] ? parseInt(properties['end date'].split('-')[0]) : null;
-
-        // Calculate decades if start and end years are available
-        const decades = startYear && endYear ? calculateDecades(startYear, endYear) : 'Unknown';
-
-        // Create the popup content
-        const popupContent = `
-            <strong>Name:</strong> ${getDataOrBlank(properties['name'])}<br>
-            <strong>Address:</strong> ${getDataOrBlank(properties['address'])}<br>
-            <strong>Description:</strong> ${getDataOrBlank(properties['description'])}<br>
-            <strong>Active Decades:</strong> ${decades}<br>
-            <strong>Source:</strong> ${getDataOrBlank(properties['source'])}
-        `;
-
-        popupDiv.innerHTML = popupContent;
-        popupDiv.style.left = `${event.pixel[0] + 10}px`;
-        popupDiv.style.top = `${event.pixel[1] + 10}px`;
-
-        // Show the popup after 1 second
-        clearTimeout(hoverTimeout);
-        hoverTimeout = setTimeout(function () {
-            popupDiv.style.display = 'block';
-        }, 1000); // 1000 ms = 1 second
+    if (startDecade === endDecade) {
+        return `${startDecade}s`;
     } else {
-        // Hide popup if no feature is hovered over
-        popupDiv.style.display = 'none';
-        clearTimeout(hoverTimeout);
+        return `${startDecade}s – ${endDecade}s`;
     }
-});
+}
+
+// Utility to avoid blank/null data
+function getDataOrBlank(data) {
+    return data ? data : '';
+}
+
+// Ensure the map is initialized before handling clicks
+if (!map) {
+    console.error('Error: "map" is not defined. Please initialize the map before using it.');
+} else {
+    // Handle clicking on features
+    map.on('singleclick', function (event) {
+        const feature = map.forEachFeatureAtPixel(event.pixel, function (feat) {
+            return feat;
+        });
+
+        if (feature) {
+            const properties = feature.getProperties();
+
+            const startYear = properties['Start'] ? parseInt(properties['Start'].split('-')[0]) : null;
+            const endYear = properties['End'] ? parseInt(properties['End'].split('-')[0]) : null;
+            const decades = calculateDecades(startYear, endYear);
+
+            const name = getDataOrBlank(properties['Name']);
+            const address = getDataOrBlank(properties['Address']);
+            const sexGender = getDataOrBlank(properties['sex/gender']);
+            const race = getDataOrBlank(properties['race']);
+            const description = getDataOrBlank(properties['Description']);
+            const source = getDataOrBlank(properties['Source']);
+
+            const popupContent = `
+    <div style="text-align: center; font-weight: bold; text-decoration: underline; margin-bottom: 6px;">
+        ${name}
+    </div>
+
+    <table style="margin-bottom: 10px;">
+        <tr><td style="font-weight: bold; padding-right: 10px;">Address:</td><td>${address}</td></tr>
+        <tr><td style="font-weight: bold; padding-right: 10px;">Active:</td><td>${decades}</td></tr>
+        ${sexGender && sexGender.toLowerCase() !== 'unclear' 
+            ? `<tr><td style="font-weight: bold; padding-right: 10px;">Sexuality:</td><td>${sexGender}</td></tr>` 
+            : ''}
+        ${race && race.toLowerCase() !== 'unclear' 
+            ? `<tr><td style="font-weight: bold; padding-right: 10px;">Race:</td><td>${race}</td></tr>` 
+            : ''}
+    </table>
+
+    <hr style="margin: 10px 0;" />
+    <div style="text-align: justify;">${description}</div>
+    <div style="margin-top: 10px;"><strong>Source:</strong> ${source}</div>
+`;
+
+
+            popupDiv.innerHTML = popupContent;
+
+            // Convert event.coordinate to screen position
+            const pixel = map.getPixelFromCoordinate(event.coordinate);
+            popupDiv.style.left = `${pixel[0] + 10}px`;
+            popupDiv.style.top = `${pixel[1] + 10}px`;
+
+            popupDiv.style.display = 'block';
+        } else {
+            popupDiv.style.display = 'none';
+        }
+    });
+}

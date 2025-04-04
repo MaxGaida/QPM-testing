@@ -1,189 +1,213 @@
-let categories = {}; // Store unique c1 and c2 categories
+(function () {
+    const hiddenStyle = new ol.style.Style({});
 
-// Function to extract unique categories from GeoJSON
-function extractCategories(features) {
-    features.forEach(feature => {
-        let props = feature.getProperties();
-        let c1 = props.c1 || "Other";
-        let c2 = props.c2 || "Other";
-
-        if (!categories[c1]) {
-            categories[c1] = new Set();
+    function initFilter() {
+        if (!window.vectorSource || !vectorSource.getFeatures().length || !window.styleFunction || !window.c1ColorMap) {
+            return setTimeout(initFilter, 200);
         }
-        categories[c1].add(c2);
-    });
-}
 
-// Function to filter features based on checkboxes
-function filterFeatures() {
-    let selectedC1 = new Set([...document.querySelectorAll(".c1-filter:checked")].map(cb => cb.value.toLowerCase()));
-    let selectedC2 = new Set([...document.querySelectorAll(".c2-filter:checked")].map(cb => cb.value.toLowerCase()));
+        const features = vectorSource.getFeatures();
 
-    vectorSource.getFeatures().forEach(feature => {
-        let props = feature.getProperties();
-        let featureC1 = (props.c1 || "").toLowerCase();
-        let featureC2 = (props.c2 || "").toLowerCase();
-
-        let visible = selectedC1.has(featureC1) && selectedC2.has(featureC2);
-        feature.setStyle(visible ? styleFunction(feature) : new ol.style.Style({ visibility: 'hidden' }));
-    });
-}
-
-
-// Function to create filter UI with select/deselect all buttons
-function createFilterUI() {
-    let filterDiv = document.getElementById("filters");
-    if (!filterDiv) {
-        filterDiv = document.createElement("div");
-        filterDiv.id = "filters";
-        document.body.appendChild(filterDiv);
-    }
-    filterDiv.innerHTML = "<h3>Filter by Category</h3>";
-
-    filterDiv.style.position = "absolute";
-    filterDiv.style.top = "150px"; // Moves below the search bar
-    filterDiv.style.left = "10px";
-    filterDiv.style.background = "rgba(255, 255, 255, 0.9)";
-    filterDiv.style.padding = "10px";
-    filterDiv.style.borderRadius = "5px";
-    filterDiv.style.boxShadow = "2px 2px 5px rgba(0,0,0,0.3)";
-    filterDiv.style.zIndex = "999";
-    filterDiv.style.maxWidth = "300px";
-
-    // Create Select All and Deselect All buttons
-    let selectAllBtn = document.createElement("button");
-    selectAllBtn.innerText = "Select All";
-    selectAllBtn.style.margin = "5px";
-    selectAllBtn.style.cursor = "pointer";
-    selectAllBtn.addEventListener("click", () => toggleCategoryCheckboxes(true));
-
-    let deselectAllBtn = document.createElement("button");
-    deselectAllBtn.innerText = "Deselect All";
-    deselectAllBtn.style.margin = "5px";
-    deselectAllBtn.style.cursor = "pointer";
-    deselectAllBtn.addEventListener("click", () => toggleCategoryCheckboxes(false));
-
-    filterDiv.appendChild(selectAllBtn);
-    filterDiv.appendChild(deselectAllBtn);
-    filterDiv.appendChild(document.createElement("br"));
-
-    Object.keys(categories).forEach(c1 => {
-        let c1Container = document.createElement("div");
-
-        // Create a container for the C1 category
-        let c1Header = document.createElement("div");
-        c1Header.style.display = "flex";
-        c1Header.style.alignItems = "center";
-
-        // Create a toggle button
-        let toggleBtn = document.createElement("button");
-        toggleBtn.innerText = "▼"; // Down arrow initially
-        toggleBtn.style.marginRight = "5px";
-        toggleBtn.style.cursor = "pointer";
-        toggleBtn.style.border = "none";
-        toggleBtn.style.background = "none";
-        toggleBtn.style.fontSize = "16px";
-        toggleBtn.style.padding = "0";
-        toggleBtn.style.width = "20px";
-
-        // Create the main c1 checkbox
-        let c1Checkbox = document.createElement("input");
-        c1Checkbox.type = "checkbox";
-        c1Checkbox.classList.add("c1-filter");
-        c1Checkbox.value = c1;
-        c1Checkbox.checked = true;
-
-        let c1Label = document.createElement("label");
-        c1Label.appendChild(c1Checkbox);
-        c1Label.appendChild(document.createTextNode(` ${c1}`));
-
-        // Create a container for c2 checkboxes
-        let c2List = document.createElement("div");
-        c2List.style.marginLeft = "15px";
-        c2List.style.display = "none"; // Hide by default
-
-        // Toggle functionality
-        toggleBtn.addEventListener("click", function() {
-            if (c2List.style.display === "none") {
-                c2List.style.display = "block";
-                toggleBtn.innerText = "▼"; // Down arrow
-            } else {
-                c2List.style.display = "none";
-                toggleBtn.innerText = "▶"; // Right arrow
-            }
+        // Group c1 -> Set of c2
+        const categories = {};
+        features.forEach(f => {
+            const c1 = f.get("c1") || "Other";
+            const c2 = f.get("c2") || "Other";
+            if (c1 === "unclear" || c2 === "unclear") return;
+            if (!categories[c1]) categories[c1] = new Set();
+            categories[c1].add(c2);
         });
 
-        // Add all c2 checkboxes under this c1
-        categories[c1].forEach(c2 => {
-            let c2Checkbox = document.createElement("input");
-            c2Checkbox.type = "checkbox";
-            c2Checkbox.classList.add("c2-filter");
-            c2Checkbox.dataset.c1 = c1;
-            c2Checkbox.value = c2;
-            c2Checkbox.checked = true;
+        let filterDiv = document.getElementById("filters");
+        if (!filterDiv) {
+            filterDiv = document.createElement("div");
+            filterDiv.id = "filters";
+            document.body.appendChild(filterDiv);
+        }
 
-            let c2Label = document.createElement("label");
-            c2Label.appendChild(c2Checkbox);
-            c2Label.appendChild(document.createTextNode(` ${c2}`));
-
-            c2List.appendChild(c2Label);
-            c2List.appendChild(document.createElement("br"));
+        Object.assign(filterDiv.style, {
+            position: "fixed",
+            top: "0",
+            right: "0",
+            background: "white",
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+            boxShadow: "2px 2px 6px rgba(0,0,0,0.15)",
+            zIndex: "1000",
+            fontFamily: "sans-serif",
+            fontSize: "14px",
+            maxHeight: "80vh",
+            overflowY: "auto"
         });
 
-        // Append elements to the category header
-        c1Header.appendChild(toggleBtn);
-        c1Header.appendChild(c1Label);
+        filterDiv.innerHTML = "<h4 style='margin-top: 0;'>Filter by category</h4>";
 
-        // Append elements to the filter UI
-        c1Container.appendChild(c1Header);
-        c1Container.appendChild(c2List);
-        filterDiv.appendChild(c1Container);
-    });
+        const controls = document.createElement("div");
+        controls.style.marginBottom = "10px";
 
-    addFilterListeners(); // Ensure checkboxes still work for filtering
-}
+        const toggleBtn = document.createElement("button");
+        toggleBtn.innerText = "Deselect All";
+        Object.assign(toggleBtn.style, {
+            backgroundColor: "#e438f0",
+            color: "white",
+            border: "none",
+            padding: "6px 10px",
+            fontSize: "13px",
+            borderRadius: "4px",
+            cursor: "pointer"
+        });
 
-// Function to select or deselect all c1 and c2 checkboxes
-function toggleCategoryCheckboxes(selectAll) {
-    document.querySelectorAll(".c1-filter, .c2-filter").forEach(cb => {
-        cb.checked = selectAll;
-    });
-    filterFeatures(); // Apply filtering immediately
-}
+        toggleBtn.addEventListener("click", () => {
+            const anyUnchecked = document.querySelectorAll(".c1-filter:not(:checked), .c2-filter:not(:checked)").length > 0;
+            const select = anyUnchecked;
 
-// Function to add event listeners to c1 and c2 checkboxes
-function addFilterListeners() {
-    document.querySelectorAll(".c1-filter").forEach(c1Checkbox => {
-        c1Checkbox.addEventListener("change", function () {
-            let c1Value = this.value;
-            let c2Checkboxes = document.querySelectorAll(`.c2-filter[data-c1='${c1Value}']`);
-
-            // If c1 is unchecked, uncheck all its c2; if checked, check all its c2
-            c2Checkboxes.forEach(c2Checkbox => {
-                c2Checkbox.checked = this.checked;
+            document.querySelectorAll(".c1-filter, .c2-filter").forEach(cb => {
+                cb.checked = select;
             });
 
-            filterFeatures(); // Apply filter updates
+            toggleBtn.innerText = select ? "Deselect All" : "Select All";
+            applyFilter();
         });
-    });
 
-    document.querySelectorAll(".c2-filter").forEach(c2Checkbox => {
-        c2Checkbox.addEventListener("change", function () {
-            let c1Value = this.dataset.c1;
-            let c1Checkbox = document.querySelector(`.c1-filter[value='${c1Value}']`);
-            let allC2Checkboxes = document.querySelectorAll(`.c2-filter[data-c1='${c1Value}']`);
-            let anyC2Checked = Array.from(allC2Checkboxes).some(cb => cb.checked);
+        controls.appendChild(toggleBtn);
+        filterDiv.appendChild(controls);
 
-            // If at least one c2 is checked, ensure c1 remains checked
-            c1Checkbox.checked = anyC2Checked;
+        for (const [c1, c2Set] of Object.entries(categories)) {
+            const color = c1ColorMap[c1] || "#ccc";
 
-            filterFeatures(); // Apply filter updates
+            const c1Container = document.createElement("div");
+            c1Container.style.marginBottom = "6px";
+
+            const header = document.createElement("div");
+            Object.assign(header.style, {
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                cursor: "pointer",
+                userSelect: "none"
+            });
+
+            const toggleIcon = document.createElement("span");
+            toggleIcon.textContent = "▶";
+            Object.assign(toggleIcon.style, {
+                display: "inline-block",
+                width: "12px",
+                fontSize: "12px",
+                marginRight: "4px"
+            });
+
+            const c1Checkbox = document.createElement("input");
+            c1Checkbox.type = "checkbox";
+            c1Checkbox.className = "c1-filter";
+            c1Checkbox.value = c1;
+            c1Checkbox.checked = true;
+            c1Checkbox.style.marginRight = "6px";
+
+            const swatch = document.createElement("span");
+            Object.assign(swatch.style, {
+                display: "inline-block",
+                width: "12px",
+                height: "12px",
+                margin: "0 6px",
+                backgroundColor: color,
+                border: "1px solid #999"
+            });
+
+            const labelText = document.createTextNode(c1);
+
+            header.appendChild(toggleIcon);
+            header.appendChild(c1Checkbox);
+            header.appendChild(swatch);
+            header.appendChild(labelText);
+
+            const c2List = document.createElement("div");
+            c2List.style.marginLeft = "22px";
+            c2List.style.display = "none";
+
+            toggleIcon.addEventListener("click", () => {
+                const expanded = c2List.style.display !== "none";
+                c2List.style.display = expanded ? "none" : "block";
+                toggleIcon.textContent = expanded ? "▶" : "▼";
+            });
+
+            c1Checkbox.addEventListener("change", () => {
+                const c2Checkboxes = c2List.querySelectorAll(`.c2-filter[data-c1="${c1}"]`);
+                c2Checkboxes.forEach(cb => cb.checked = c1Checkbox.checked);
+                applyFilter();
+            });
+
+            for (const c2 of c2Set) {
+                const c2Label = document.createElement("label");
+                c2Label.style.display = "block";
+
+                const c2Checkbox = document.createElement("input");
+                c2Checkbox.type = "checkbox";
+                c2Checkbox.className = "c2-filter";
+                c2Checkbox.dataset.c1 = c1;
+                c2Checkbox.value = c2;
+                c2Checkbox.checked = true;
+
+                c2Checkbox.addEventListener("change", () => {
+                    const allC2 = c2List.querySelectorAll(`.c2-filter[data-c1="${c1}"]`);
+                    const anyChecked = Array.from(allC2).some(cb => cb.checked);
+                    c1Checkbox.checked = anyChecked;
+                    applyFilter();
+                });
+
+                c2Label.appendChild(c2Checkbox);
+                c2Label.appendChild(document.createTextNode(" " + c2));
+                c2List.appendChild(c2Label);
+            }
+
+            c1Container.appendChild(header);
+            c1Container.appendChild(c2List);
+            filterDiv.appendChild(c1Container);
+        }
+
+        console.log("✅ Filter UI with nested c1/c2 + toggles + buttons initialized");
+    }
+
+    window.applyFilter = function applyFilter() {
+        const selectedDecade = typeof getDecadeFilter === "function" ? getDecadeFilter() : null;
+        const decadeMode = typeof getDecadeMode === "function" ? getDecadeMode() : "all";
+
+        const selectedC1 = new Set([...document.querySelectorAll(".c1-filter:checked")].map(cb => cb.value));
+        const selectedC2 = new Set([...document.querySelectorAll(".c2-filter:checked")].map(cb => cb.value + "|" + cb.dataset.c1));
+
+        vectorSource.getFeatures().forEach((f) => {
+            const c1 = f.get("c1") || f.get("C1");
+            const c2 = f.get("c2") || f.get("C2");
+            const key = (c2 || "") + "|" + (c1 || "");
+
+            const startRaw = f.get("Start");
+            const endRaw = f.get("End");
+            const start = startRaw ? parseInt(String(startRaw).slice(0, 4)) : null;
+            const end = endRaw ? parseInt(String(endRaw).slice(0, 4)) : new Date().getFullYear();
+
+            const matchesC1 = selectedC1.has(c1);
+            const matchesC2 = selectedC2.has(key);
+
+            const matchesDecade =
+                decadeMode === "all" || (
+                    start !== null &&
+                    (
+                        (decadeMode === "pre1950" && start <= 1949) ||
+                        (decadeMode === "range" && start <= (selectedDecade + 9) && end >= selectedDecade)
+                    )
+                );
+
+            const visible = matchesC1 && matchesC2 && matchesDecade;
+            f.setStyle(visible ? styleFunction(f) : hiddenStyle);
         });
-    });
-}
+    };
 
-// Wait for GeoJSON to load, then extract categories and create UI
-setTimeout(() => {
-    extractCategories(vectorSource.getFeatures());
-    createFilterUI();
-}, 1000);
+    function toggleAll(select) {
+        document.querySelectorAll(".c1-filter, .c2-filter").forEach(cb => {
+            cb.checked = select;
+        });
+        applyFilter();
+    }
+
+    initFilter();
+})();
