@@ -86,8 +86,21 @@ function loadInitialData(data) {
     vectorSource.clear();
     vectorSource.addFeatures(features);
 
+    // ✅ Normalize properties: lowercase versions of all keys
+    features.forEach(f => {
+        const props = f.getProperties();
+        for (const key in props) {
+            const lower = key.toLowerCase();
+            if (key !== lower && !f.get(lower)) {
+                f.set(lower, props[key]);
+            }
+        }
+    });
+
+    // ✅ Now style features using normalized "c1"
     features.forEach(f => f.setStyle(styleFunction(f)));
 
+    // ✅ Fuse setup (safe to use lowercase keys now)
     window.fuse = new Fuse(features.map(f => ({
         feature: f,
         ...f.getProperties()
@@ -97,5 +110,7 @@ function loadInitialData(data) {
         threshold: 0.3
     });
 
-    console.log("✅ Fuse index created with", features.length, "features");
+    extractClassificationCategories(); // at the end
+
 }
+

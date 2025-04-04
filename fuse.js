@@ -3,15 +3,7 @@ function createSearchUI() {
     if (!wrapper) {
         wrapper = document.createElement("div");
         wrapper.id = "search-wrapper";
-        wrapper.style.position = "absolute";
-        wrapper.style.top = "10px";
-        wrapper.style.left = "10px";
-        wrapper.style.background = "rgba(255,255,255,0.95)";
-        wrapper.style.padding = "10px";
-        wrapper.style.borderRadius = "10px";
-        wrapper.style.boxShadow = "2px 2px 5px rgba(0,0,0,0.3)";
-        wrapper.style.zIndex = "1000";
-        wrapper.style.maxWidth = "300px";
+        wrapper.className = "search-wrapper";
         document.body.appendChild(wrapper);
     }
 
@@ -27,25 +19,11 @@ function createSearchUI() {
     searchInput.type = "text";
     searchInput.id = "search-bar";
     searchInput.placeholder = "Search for anything...";
-    searchInput.style.flex = "1";
-    searchInput.style.padding = "5px";
-    searchInput.style.border = "1px solid #ccc";
-    searchInput.style.borderRadius = "4px";
-    
+    searchInput.className = "search-input";
 
     const toggleButton = document.createElement("button");
     toggleButton.innerText = "Highlight All";
-    toggleButton.style.padding = "5px 8px";
-    toggleButton.style.fontSize = "0.85em";
-    toggleButton.style.cursor = "pointer";
-    toggleButton.style.borderRadius = "4px";
-    toggleButton.style.border = "1px solid #999";
-    toggleButton.style.background = "#e438f0";
-    toggleButton.style.height = "32px"; // Match input height
-    toggleButton.style.marginTop = "1px"; // Optional nudge if needed
-    toggleButton.style.display = "flex";
-    toggleButton.style.alignItems = "center";
-
+    toggleButton.className = "map-button highlight-toggle";
 
     let highlightsActive = false;
 
@@ -55,14 +33,12 @@ function createSearchUI() {
         const results = fuse.search(searchQuery);
 
         if (highlightsActive) {
-            // Deselect
             vectorSource.getFeatures().forEach(feature => {
                 feature.setStyle(defaultStyle);
             });
             toggleButton.innerText = "Highlight All";
             highlightsActive = false;
         } else {
-            // Highlight
             results.forEach(result => {
                 const feature = result.item.feature;
                 feature.setStyle(new ol.style.Style({
@@ -80,9 +56,7 @@ function createSearchUI() {
 
     const resultsDiv = document.createElement("div");
     resultsDiv.id = "search-results";
-    resultsDiv.style.maxHeight = "200px";
-    resultsDiv.style.overflowY = "auto";
-    resultsDiv.style.marginTop = "5px";
+    resultsDiv.className = "search-results";
 
     inputRow.appendChild(searchInput);
     inputRow.appendChild(toggleButton);
@@ -97,7 +71,6 @@ function createSearchUI() {
         toggleButton.innerText = "Highlight All";
     });
 }
-
 
 function searchFeatures(query) {
     const resultsDiv = document.getElementById("search-results");
@@ -118,10 +91,7 @@ function searchFeatures(query) {
 
         const resultItem = document.createElement("div");
         resultItem.innerText = label;
-        resultItem.style.cursor = "pointer";
-        resultItem.style.padding = "5px";
-        resultItem.style.borderBottom = "1px solid #ddd";
-        resultItem.style.background = "#f9f9f9";
+        resultItem.className = "search-result-item";
 
         resultItem.addEventListener("click", () => {
             highlightFeature(feature);
@@ -135,7 +105,7 @@ function highlightFeature(feature) {
     const geometry = feature.getGeometry();
     const coords = geometry.getCoordinates();
 
-    feature.setStyle(null); // clear any old style
+    feature.setStyle(null);
     feature.setStyle(new ol.style.Style({
         image: new ol.style.Circle({
             radius: 10,

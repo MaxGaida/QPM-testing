@@ -4,38 +4,44 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    const wrapper = document.getElementById("search-wrapper");
+    let wrapper = document.getElementById("search-wrapper");
     if (!wrapper) {
         console.error("Missing #search-wrapper. Load fuse.js first.");
         return;
     }
 
+    // Ensure wrapper is correctly positioned
+    Object.assign(wrapper.style, {
+        position: "absolute",
+        top: "10px",
+        left: "10px",
+        background: "rgba(255,255,255,0.95)",
+        padding: "10px",
+        borderRadius: "10px",
+        boxShadow: "2px 2px 5px rgba(0,0,0,0.3)",
+        zIndex: "1000",
+        maxWidth: "300px"
+    });
+
     const container = document.createElement("div");
-    container.style.marginTop = "12px"; // spacing below fuse search
+    container.style.marginTop = "12px";
 
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = "Or, search by address...";
-    input.style.width = "90%";
-    input.style.padding = "5px";
-    input.style.border = "1px solid #ccc";
-    input.style.borderRadius = "4px";
+    input.className = "search-input";
 
     const resultsDiv = document.createElement("div");
-    resultsDiv.style.maxHeight = "150px";
-    resultsDiv.style.overflowY = "auto";
-    resultsDiv.style.marginTop = "5px";
+    resultsDiv.className = "search-results";
 
     container.appendChild(input);
     container.appendChild(resultsDiv);
-    wrapper.appendChild(container); // ✅ Adds to same box as Fuse search
+    wrapper.appendChild(container);
 
-    // Marker layer
     const pinSource = new ol.source.Vector();
     const pinLayer = new ol.layer.Vector({ source: pinSource });
     map.addLayer(pinLayer);
 
-    // Fetch address suggestions
     function fetchSuggestions(query) {
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`;
 
@@ -52,9 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 data.forEach(item => {
                     const suggestion = document.createElement("div");
                     suggestion.innerText = item.display_name;
-                    suggestion.style.cursor = "pointer";
-                    suggestion.style.padding = "5px";
-                    suggestion.style.borderBottom = "1px solid #ccc";
+                    suggestion.className = "search-result-item";
 
                     suggestion.addEventListener("click", () => {
                         const lon = parseFloat(item.lon);

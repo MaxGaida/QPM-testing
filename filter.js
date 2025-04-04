@@ -48,15 +48,8 @@
 
         const toggleBtn = document.createElement("button");
         toggleBtn.innerText = "Deselect All";
-        Object.assign(toggleBtn.style, {
-            backgroundColor: "#e438f0",
-            color: "white",
-            border: "none",
-            padding: "6px 10px",
-            fontSize: "13px",
-            borderRadius: "4px",
-            cursor: "pointer"
-        });
+        toggleBtn.className = "toggle-button";
+
 
         toggleBtn.addEventListener("click", () => {
             const anyUnchecked = document.querySelectorAll(".c1-filter:not(:checked), .c2-filter:not(:checked)").length > 0;

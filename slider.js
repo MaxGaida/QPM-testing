@@ -1,6 +1,3 @@
-console.log("📆 Decade slider script loaded");
-
-
 (function () {
     if (!window.vectorSource || !window.applyFilter) {
         return setTimeout(arguments.callee, 200); // Wait until map and filters are ready
@@ -39,8 +36,7 @@ console.log("📆 Decade slider script loaded");
         slider.step = 10;
         slider.value = minYear;
         slider.id = "decade-slider";
-        slider.style.verticalAlign = "middle";
-        slider.style.marginRight = "10px";
+        slider.className = "slider-control";
 
         const valueDisplay = document.createElement("span");
         valueDisplay.innerText = `${slider.value}s`;
@@ -48,14 +44,7 @@ console.log("📆 Decade slider script loaded");
 
         const showAllBtn = document.createElement("button");
         showAllBtn.innerText = "Show All";
-        showAllBtn.style.marginLeft = "15px";
-        showAllBtn.style.padding = "4px 8px";
-        showAllBtn.style.fontSize = "13px";
-        showAllBtn.style.cursor = "pointer";
-        showAllBtn.style.backgroundColor = "#e438f0";
-        showAllBtn.style.color = "white";
-        showAllBtn.style.border = "none";
-        showAllBtn.style.borderRadius = "4px";
+        showAllBtn.className = "map-button";
 
         showAllBtn.addEventListener("click", () => {
             showAllActive = true;
