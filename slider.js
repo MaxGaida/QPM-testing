@@ -79,3 +79,4 @@
 
     createDecadeSlider(1950, 2020);
 })();
+
