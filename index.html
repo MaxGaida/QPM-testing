@@ -13,7 +13,7 @@
         // Only run this if we're not already on the mobile site
         if (/Mobi|Android/i.test(navigator.userAgent) && !window.location.href.includes("mobile")) {
           if (confirm("It looks like you're on a mobile device. Would you like to switch to the mobile version of this site?")) {
-            window.location.href = "mobile.html"; // Or wherever your mobile version lives
+            window.location.href = window.location.pathname.replace(/index\.html$/, "mobile.html");
           }
         }
       </script>
