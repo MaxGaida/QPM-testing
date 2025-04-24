@@ -61,23 +61,23 @@ map.on('singleclick', function (event) {
     const source = getDataOrBlank(props['Source']);
 
     popupDiv.innerHTML = `
-      <div style="position: relative;">
+      <div style="position: relative; padding-top: 24px;">
     <button onclick="document.getElementById('popup').style.display='none'" 
       style="
         position: absolute;
-        top: -10px;
-        left: -10px;
+        top: 4px;
+        left: 4px;
         background-color: #c63dc6;
         color: white;
         border: none;
         border-radius: 50%;
         width: 24px;
         height: 24px;
-        font-size: 14px;
-        line-height: 1;
+        font-size: 16px;
+        line-height: 24px;
         font-weight: bold;
         cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        z-index: 1001;
       ">&times;</button>  
     
     <div style="text-align: center; font-weight: bold; text-decoration: underline; margin-bottom: 6px;">
