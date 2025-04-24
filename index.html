@@ -8,32 +8,16 @@
     <link rel="stylesheet" href="map-styles.css" />
 </head>
 
-<body>
-    <script>
-        // Only run this if we're not already on the mobile site
-        if (/Mobi|Android/i.test(navigator.userAgent) && !window.location.href.includes("mobile")) {
-          if (confirm("It looks like you're on a mobile device. Would you like to switch to the mobile version of this site?")) {
-            window.location.href = "mobile.html"; // Or wherever your mobile version lives
-          }
-        }
-      </script>
-      
-      <div id="test-mobile-switch" style="position: fixed; top: 10px; right: 10px; z-index: 10000;">
-        <button onclick="window.location.href='mobile.html'" style="
-          background-color: #a82aa8;
-          color: white;
-          padding: 6px 12px;
-          font-weight: bold;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-        ">Test Mobile Version</button>
-      </div>
-      
-    
+<body>    
     <div id="map" style="height: 100vh;"></div>
     <div id="filters"></div>
+
+
+    
+    <div id="mobile-test-button">
+        <button class="map-button" onclick="window.location.href='mobile.html'">Try Mobile Version</button>
+      </div>
+      
 
     <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>

@@ -1,7 +1,18 @@
 #map {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 500px;
-}
+    height: 100%;
+  }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* Prevent scrollbars */
+  }
+  
 
 #popup {
     max-width: 300px;
@@ -68,6 +79,34 @@
         box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
         z-index: 1000;
         max-width: 300px;
+      }
+      
+      #mobile-test-button {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999; /* Ensure it's above the map and filters */
+        pointer-events: auto; /* Allow it to be clickable */
+      }
+      
+      
+      
+      #mobile-test-button button {
+        padding: 8px 16px;
+        background-color: #c63dc6;
+        color: white;
+        font-weight: bold;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: background-color 0.2s ease;
+      }
+      
+      #mobile-test-button button:hover {
+        background-color: #a82aa8;
       }
       
       
