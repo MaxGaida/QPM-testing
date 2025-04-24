@@ -9,6 +9,16 @@
 </head>
 
 <body>
+    <script>
+        // Only run this if we're not already on the mobile site
+        if (/Mobi|Android/i.test(navigator.userAgent) && !window.location.href.includes("mobile")) {
+          if (confirm("It looks like you're on a mobile device. Would you like to switch to the mobile version of this site?")) {
+            window.location.href = "/mobile.html"; // Or wherever your mobile version lives
+          }
+        }
+      </script>
+      
+    
     <div id="map" style="height: 100vh;"></div>
     <div id="filters"></div>
 
